@@ -1,109 +1,58 @@
 // → BIBLIOTECAS
-#include "MyHeader.h"
-
-#include "temperatura.h"
-#define versao "v1c"
-
-// → DEFINIÇÕES DOS PINOS
-// const int rele_ventilacao = A2;
-// const int rele_circulacao = 4;
-// const int led_noturno = 5;
-// const int rele_luz_principal = A0;
-// const int ldr = A4;
-// const int botao_apaga_eeprom = 2;
-// const int botao_abre_alimentador = 6;
-// const int botao_alimentacao_manual = 8;
-
-// → CONSTANTES DE CONVERSAO
-const float ms_p_h = 3600000.00;
-const float ms_p_m = 60000.00;
-
-// → DEFINIÇAO DOS TEMPORIZADOS
-long medir_temp = 0;
-bool medir_hab = false;
-const int tempo_leitura_temperatura = 1;
-
-// → VARIAVEIS GLOBAIS
-int temperatura_atual = 0;
-int tempo_para_gravar = 0;
-
-// → VARIAVEIS DO ALIMENTADOR
-bool alimentar = false;
-int contagem = 0;
-int tempo_gravado = 0;
-long int tempo_inicial = 0;
-
-// → CONTROLE DE LEITURA DA TEMPERATURA
-long int intervalo_de_leitura_inicial;
-bool reiniciar_tempo_leitura = false;
-int temperatura = 0;
-int temperaturaMin = 0;
-int temperaturaMax = 0;
-
-// → CONTROLE DA VENTILACAO
-bool contador_ativo = false;
-long int tempo_de_espera = 0;
-long int t0_ventilacao = 0;
-
-/*==============================================================
-   ÁREA DE TESTES
-  =============================================================
-*/
-unsigned int voltas = 0;
-long tempo_d_envio = 0;
+#include "Lib.h"
 
 void setup()
 {
   Serial.begin(9600);
-  Serial.println(versao);
+  Serial.println(VERSION);
 
-  //  file  setup.ino
+  //  file  HardwareSetup.ino
   setPinConfiguration();
   setInititalCondition();
 
-eepromInitializer();
-  // inicializar_eeprom();
+  //  file eepromFunctions.ino
+  eepromInitializer();
 
-  inicializar_onewire();
+  //  file oneWireFunctions.ino
+  oneWireInitializer();
 
-  inicializar_servo();
+  //  file servoFunctions.ino
+  feederInitializer();
 
-  inicializar_radio();
+  //  file radioFunctions.ino
+  radioInitializer();
 
-  temperatura_atual = ler_one_wire();
+  
 }
 
 void loop()
 {
-  funcao_iluminacao(analogRead(ldr), map(analogRead(ldr), 0, 1000, 0, 100), false, digitalRead(rele_luz_principal), 0);
+  //  file lighting.ino
+  checkLighting(analogRead(LDR_PIN), digitalRead(RELAY_LIGHT_PIN));
 
-  funcao_temporizada();
+  //  file temperature.ino
+  checkTemperature();
 
-  funcao_alimentador(0);
+  //  file feeder.ino
+  //  checkFeeder();
 
-  funcao_gravar_dados();
+  //  file  fan.ino
+  //  checkFan();
 
-  funcao_ler_botoes();
+  //  file buttons.ino
+  //  readButtons();
 
-  //Serial.println((String)(millis() - tempo_d_envio) + "|" + (String)millis() + "|" + (String)tempo_d_envio);
-  if (millis() - tempo_d_envio > 8000)
-    funcao_enviar_dados();
+  //  file eeprom.ino
+  //  recordData();
 
-  funcao_ventilacao();
+  //  file radio.ino
+  //  sendRadioData();
 
-  gravar_hora();
-}
+  //  file debug.ino
+  //  if(DEBUG)serialOutput();
 
-void funcao_temporizada()
-{
-  if (!medir_hab)
-  {
-    medir_temp = millis();
-    medir_hab = true;
-  }
-  if (medir_hab && ((millis() - medir_temp) / ms_p_m) > tempo_leitura_temperatura)
-  {
-    temperatura_atual = ler_one_wire();
-    medir_hab = false;
-  }
+  //  file buttons.ino
+  if (DEBUG_SER_CONTROL)readFromSerial();
+
+  delay(30);
 }

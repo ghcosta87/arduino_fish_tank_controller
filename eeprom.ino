@@ -1,20 +1,15 @@
-// #include "Definitions.h"
-//  ============================================================
-const float format_float = 0.00f;
-// int tempMin_eeprom = 99;
-// int tempMax_eeprom = 0;
-int contagem_eeprom = 0;
-// int backup_tempo_alimentacao = 0;
-// int pos_mem1 = 0;
-// int pos_mem2 = 4;
-// int pos_mem3 = 8;
-// int pos_mem4 = 12;
-// int pos_mem5 = 16;
+void eepromInitializer() {
+  if (DEBUG_SETUP)Serial.println("\neepromInitializer()");
 
-void eepromInitializer()
-{
   minTemp = (EEPROM.get(EEPROM_MEM_POS1, FLOAT_FORMAT)) * 100;
   maxTemp = (EEPROM.get(EEPROM_MEM_POS2, FLOAT_FORMAT)) * 100;
+  feederCounter = (EEPROM.get(EEPROM_MEM_POS3, FLOAT_FORMAT)) * 100;
+  m_feederTimeRemaining = (EEPROM.get(EEPROM_MEM_POS4, FLOAT_FORMAT)) * 100;
+
+  if (DEBUG_SETUP) {
+    String outputMessage = "minTemp:" + (String)minTemp + "\nmaxTemp:" + (String)maxTemp + "\ncounter:" + (String)feederCounter + "\nremainingTime:" + (String)m_feederTimeRemaining;
+    Serial.println(outputMessage);
+  }
 }
 
 void cleanMemory()
@@ -27,58 +22,37 @@ void cleanMemory()
   contagem = EEPROM.get(EEPROM_MEM_POS3, FLOAT_FORMAT);
 }
 
-void inicializar_eeprom()
+void recordData()
 {
-  BUTTON_ERASE_PIN = 0;
-  tempMin_eeprom = (int)(100 * (EEPROM.get(pos_mem1, format_float)));
-  temperaturaMin = tempMin_eeprom;
-  tempMax_eeprom = (int)(100 * (EEPROM.get(pos_mem2, format_float)));
-  temperaturaMax = tempMax_eeprom;
-  contagem_eeprom = (int)(100 * (EEPROM.get(pos_mem3, format_float)));
-  contagem = contagem_eeprom;
-  backup_tempo_alimentacao = (int)(100 * (EEPROM.get(pos_mem4, format_float)));
-  tempo_gravado = backup_tempo_alimentacao;
-  Serial.println("temp min: " + (String)temperaturaMin);
-  Serial.println("temp max: " + (String)temperaturaMax);
-  Serial.println("contagem: " + (String)contagem);
-  Serial.println("t gravado: " + (String)tempo_gravado);
+  if (stopWatch(recorderInititalTime, minToMili(EEPROM_REC_INTERVAL))) {
+    temperatureRecorder();
+    feederRecorder();
+  }
 }
 
-// void funcao_gravar_dados()
-// {
 
-//   if (temperatura_atual < tempMin_eeprom)
-//   {
-//     temperaturaMin = temperatura_atual; //temperatura minima
-//     tempMin_eeprom = temperaturaMin;
-//     EEPROM.put(pos_mem1, ((float)temperaturaMin) / 100);
-//   }
-//   if (temperatura_atual > tempMax_eeprom)
-//   {
-//     temperaturaMax = temperatura_atual; //temperatura maxima
-//     tempMax_eeprom = temperaturaMax;
-//     EEPROM.put(pos_mem2, ((float)temperaturaMax) / 100);
-//   }
+void temperatureRecorder() {
+  if (currentTemp < m_minTemp)
+  {
+    minTemp = currentTemp; //temperatura minima
+    m_minTemp = minTemp;
+    setRadioData(rd_minTemperature, m_minTemp);
+    EEPROM.put(EEPROM_MEM_POS1, ((float)temperaturaMin) / 100);
+  }
+  if (currentTemp > m_maxTemp)
+  {
+    maxTemp = currentTemp; //temperatura maxima
+    m_maxTemp = maxTemp;
+    setRadioData(rd_maxTemperature, m_maxTemp);
+    EEPROM.put(EEPROM_MEM_POS2, ((float)temperaturaMax) / 100);
+  }
+  //  if (temperatura < 0 || temperatura > 40) {
+  //    alarme[4] = true;
+  //  }
+}
 
-//   //  if (temperatura < 0 || temperatura > 40) {
-//   //    alarme[4] = true;
-//   //  }
-
-//   contagem_eeprom = contagem;
-//   EEPROM.put(pos_mem3, ((float)contagem_eeprom) / 100);
-
-//   EEPROM.put(pos_mem4, backup_tempo_alimentacao);
-// }
-
-// void limpar_eeprom()
-// {
-//   Serial.println(F("##################MEMORIA APAGADA################"));
-//   EEPROM.put(pos_mem1, 99.0);
-//   EEPROM.put(pos_mem2, 0.0);
-//   EEPROM.put(pos_mem3, 0.0);
-//   EEPROM.put(pos_mem4, 0.0);
-//   contagem = EEPROM.get(pos_mem3, format_float);
-
-//   inicializar_eeprom();
-//   temperatura_atual = ler_one_wire();
-// }
+void feederRecorder() {
+  m_feederCounter = feederCounter;
+  EEPROM.put(EEPROM_MEM_POS3, ((float)m_feederCounter) / 100);
+  EEPROM.put(EEPROM_MEM_POS4, m_feederTimeRemaining);
+}
