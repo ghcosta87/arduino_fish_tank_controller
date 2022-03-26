@@ -25,7 +25,6 @@ bool stopWatch(long initialValue, long setpoint) {
   return false;
 }
 
-
 String stopWatchValue(long initialValue, long setpoint) {
   long elapsedTime = millis() - initialValue;
   long diference = setpoint - elapsedTime;
